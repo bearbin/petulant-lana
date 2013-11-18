@@ -1,17 +1,17 @@
 package main
 
 import (
-	"strconv"
-	"encoding/json"
-	"strings"
 	"bytes"
-	"os"
-	"math"
+	"encoding/json"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
-	"html/template"
+	"os"
+	"strconv"
+	"strings"
 )
 
 type TransactionResult struct {
