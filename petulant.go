@@ -14,14 +14,22 @@ import (
 	"strings"
 )
 
-type TransactionResult struct {
+type configuration struct {
+	Name           string `json: "name"`
+	Url            string `json: "url"`
+	CallbackSecret string `json: "callbacksecret"`
+	BasicPrice     string `json: "baseprice"`
+	MinimumPrice   string `json: "minprice"`
+}
+
+type transactionResult struct {
 	Success bool `json:"success"`
 	Button  struct {
 		Code string `json:"code"`
 	} `json:"button"`
 }
 
-type CallbackResult struct {
+type callbackResult struct {
 	Order struct {
 		Filename string `json:"custom"`
 	} `json:"order"`
@@ -76,7 +84,7 @@ func createButton(n string, p float64) string {
 		fmt.Println(err)
 	}
 	defer resp.Body.Close()
-	res := TransactionResult{}
+	res := transactionResult{}
 	fmt.Println(string(response_body))
 	err = json.Unmarshal(response_body, &res)
 	return res.Button.Code
@@ -100,12 +108,12 @@ func upload(w http.ResponseWriter, req *http.Request) {
 
 	data, err := ioutil.ReadAll(file)
 	if err != nil {
-		fmt.Println(err)
+		log.Print(err)
 		return
 	}
 	err = ioutil.WriteFile("tmp/"+filename, data, 0777)
 	if err != nil {
-		fmt.Println(err)
+		log.Print(err)
 		return
 	}
 
@@ -126,7 +134,7 @@ func upload(w http.ResponseWriter, req *http.Request) {
 func coinbaseCallback(w http.ResponseWriter, req *http.Request) {
 	fmt.Println("LELELELE")
 	body, _ := ioutil.ReadAll(req.Body)
-	res := CallbackResult{}
+	res := callbackResult{}
 	fmt.Println(body)
 	json.Unmarshal([]byte(body), &res)
 	fmt.Println(res.Order.Filename)
