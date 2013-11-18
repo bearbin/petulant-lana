@@ -84,7 +84,7 @@ func createbutton(n string, p float64) string {
 }
 
 // hello world, the web server 
-func HelloServer(w http.ResponseWriter, req *http.Request) {
+func upload(w http.ResponseWriter, req *http.Request) {
 
 	// Get the form file.
 	file, header, err := req.FormFile("file")
@@ -123,7 +123,7 @@ func HelloServer(w http.ResponseWriter, req *http.Request) {
 
 }
 
-func CallbackHandler(w http.ResponseWriter, req *http.Request) {
+func coinbaseCallback(w http.ResponseWriter, req *http.Request) {
 	fmt.Println("LELELELE")
 	body, _ := ioutil.ReadAll(req.Body)
 	res := CallbackResult{}
@@ -139,15 +139,24 @@ func MainPage(w http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
-	// Upload page.
-	http.HandleFunc("/upload", HelloServer)
-	// Main page - just static HTML.
+	// Main page
 	http.HandleFunc("/", MainPage)
-	// Callback
-	http.HandleFunc("/ballcackseeecret", CallbackHandler)
+	// Upload page
+	http.HandleFunc("/upload", upload)
+	// Coinbase callback
+	http.HandleFunc("/wheatver", coinbaseCallback)
+	// Static files
 	http.Handle("/f/", http.FileServer(http.Dir("")))
+
+	// Try and serve port 80.
 	err := http.ListenAndServe(":80", nil)
 	if err != nil {
-		log.Fatal("ListenAndServe: ", err)
+		// Failed for some reason, try port 8080
+		log.Print("Failed to bind to port 80, trying 8080.")
+		err := http.ListenAndServe(":8080", nil)
+		if err != nil {
+			// Failed.
+			log.Fatal("ListenAndServe: ", err)
+		}
 	}
 }
