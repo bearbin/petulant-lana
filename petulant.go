@@ -15,16 +15,16 @@ import (
 )
 
 type TransactionResult struct {
-        Success  bool     `json:"success"`
-        Button struct {
-                Code     string         `json:"code"`
-        } `json:"button"`
+	Success bool `json:"success"`
+	Button  struct {
+		Code string `json:"code"`
+	} `json:"button"`
 }
 
 type CallbackResult struct {
-        Order struct {
-                Filename     string         `json:"custom"`
-        } `json:"order"`
+	Order struct {
+		Filename string `json:"custom"`
+	} `json:"order"`
 }
 
 // Get an appropriate name for the file.
@@ -44,42 +44,42 @@ func getname(fname string) string {
 
 // Create a coinbase button.
 func createbutton(n string, p float64) string {
-	coinbaserequest := "{ \"button\": {"+
-	"\"name\": \"One-Time Hosting Purchase\","+
-        "\"type\": \"buy_now\","+
-        "\"price_string\": \"" + strconv.FormatFloat(p, 'f', 8, 64) + "\","+
-        "\"price_currency_iso\": \"BTC\","+
-        "\"custom\": \"" + n + "\","+
-        "\"callback_url\": \"whatever\","+
-        "\"description\": \"Indefinite storage of the provided file. Your file will be available at: http://btcdl.bearbin.net/f/" + n + " when the transaction processes.\","+
-        "\"type\": \"buy_now\","+
-        "\"style\": \"custom_large\""+
-    	"} }"
+	coinbaserequest := "{ \"button\": {" +
+		"\"name\": \"One-Time Hosting Purchase\"," +
+		"\"type\": \"buy_now\"," +
+		"\"price_string\": \"" + strconv.FormatFloat(p, 'f', 8, 64) + "\"," +
+		"\"price_currency_iso\": \"BTC\"," +
+		"\"custom\": \"" + n + "\"," +
+		"\"callback_url\": \"whatever\"," +
+		"\"description\": \"Indefinite storage of the provided file. Your file will be available at: http://btcdl.bearbin.net/f/" + n + " when the transaction processes.\"," +
+		"\"type\": \"buy_now\"," +
+		"\"style\": \"custom_large\"" +
+		"} }"
 	apikey := "InsertKeyHere"
 	fmt.Println(coinbaserequest)
 	request_body := bytes.NewBuffer([]byte(coinbaserequest))
 
-        client := &http.Client{}
-        req, err := http.NewRequest("POST", "https://coinbase.com/api/v1/buttons?api_key=" + apikey, request_body)
-        if err != nil {
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", "https://coinbase.com/api/v1/buttons?api_key="+apikey, request_body)
+	if err != nil {
 		fmt.Println(err)
-        }
+	}
 
-        req.Header.Add("content-type", "application/json")
-        resp, err := client.Do(req)
-        if err != nil {
+	req.Header.Add("content-type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
 		fmt.Println(err)
-        }
+	}
 
-        response_body, err := ioutil.ReadAll(resp.Body)
-        if err != nil {
+	response_body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
 		fmt.Println(err)
-        }
-        defer resp.Body.Close()
+	}
+	defer resp.Body.Close()
 	res := TransactionResult{}
 	fmt.Println(string(response_body))
-        err = json.Unmarshal(response_body, &res)
-        return res.Button.Code
+	err = json.Unmarshal(response_body, &res)
+	return res.Button.Code
 
 }
 
@@ -103,7 +103,7 @@ func HelloServer(w http.ResponseWriter, req *http.Request) {
 		fmt.Println(err)
 		return
 	}
-	err = ioutil.WriteFile("tmp/" + filename, data, 0777)
+	err = ioutil.WriteFile("tmp/"+filename, data, 0777)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -112,14 +112,14 @@ func HelloServer(w http.ResponseWriter, req *http.Request) {
 	// Get file size.
 	supfil, _ := os.Stat("tmp/" + filename)
 	filesize := float64(supfil.Size())
-	price := math.Floor(math.Floor(filesize / 1024) * 4.8828125) / 100000000
+	price := math.Floor(math.Floor(filesize/1024)*4.8828125) / 100000000
 	if price < 0.000025 {
 		price = 0.000025
 	}
 	fmt.Println(strconv.FormatFloat(price, 'f', 8, 64))
 
 	// Redirect the user.
-	http.Redirect(w, req, "https://coinbase.com/checkouts/" + createbutton(filename, price), 302)
+	http.Redirect(w, req, "https://coinbase.com/checkouts/"+createbutton(filename, price), 302)
 
 }
 
@@ -130,7 +130,7 @@ func CallbackHandler(w http.ResponseWriter, req *http.Request) {
 	fmt.Println(body)
 	json.Unmarshal([]byte(body), &res)
 	fmt.Println(res.Order.Filename)
-	os.Rename("tmp/" + res.Order.Filename, "f/" + res.Order.Filename)
+	os.Rename("tmp/"+res.Order.Filename, "f/"+res.Order.Filename)
 }
 
 func MainPage(w http.ResponseWriter, req *http.Request) {
