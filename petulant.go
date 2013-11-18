@@ -28,7 +28,7 @@ type CallbackResult struct {
 }
 
 // Get an appropriate name for the file.
-func getname(fname string) string {
+func newFileName(fname string) string {
 	result := strings.Replace(strings.Replace(fname, "/", "-", -1), " ", "-", -1)
 	if _, err := os.Stat("f/" + result); os.IsNotExist(err) {
 		if _, err := os.Stat("tmp/" + result); os.IsNotExist(err) {
@@ -43,7 +43,7 @@ func getname(fname string) string {
 }
 
 // Create a coinbase button.
-func createbutton(n string, p float64) string {
+func createButton(n string, p float64) string {
 	coinbaserequest := "{ \"button\": {" +
 		"\"name\": \"One-Time Hosting Purchase\"," +
 		"\"type\": \"buy_now\"," +
@@ -95,7 +95,7 @@ func upload(w http.ResponseWriter, req *http.Request) {
 
 	// Get the name for the file.
 	filename := header.Filename
-	filename = getname(filename)
+	filename = newFileName(filename)
 	fmt.Println(filename)
 
 	data, err := ioutil.ReadAll(file)
@@ -119,7 +119,7 @@ func upload(w http.ResponseWriter, req *http.Request) {
 	fmt.Println(strconv.FormatFloat(price, 'f', 8, 64))
 
 	// Redirect the user.
-	http.Redirect(w, req, "https://coinbase.com/checkouts/"+createbutton(filename, price), 302)
+	http.Redirect(w, req, "https://coinbase.com/checkouts/"+createButton(filename, price), 302)
 
 }
 
