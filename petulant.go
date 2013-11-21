@@ -181,7 +181,7 @@ func main() {
 	// Upload page
 	http.HandleFunc("/upload", upload)
 	// Coinbase callback
-	http.HandleFunc("/wheatver", coinbaseCallback)
+	http.HandleFunc("/" + config.CallbackSecret, coinbaseCallback)
 	// Static files
 	http.Handle("/f/", http.FileServer(http.Dir("")))
 
