@@ -1,4 +1,5 @@
 package main
+// Package main runs the petulant-lana server.
 
 import (
 	"bytes"
