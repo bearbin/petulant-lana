@@ -14,12 +14,15 @@ import (
 	"strings"
 )
 
+// Define the types
+
 type configuration struct {
 	Name           string `json: "name"`
 	Url            string `json: "url"`
 	CallbackSecret string `json: "callbacksecret"`
-	BasicPrice     string `json: "baseprice"`
-	MinimumPrice   string `json: "minprice"`
+	BasePrice      int    `json: "baseprice"`
+	MinimumPrice   int    `json: "minprice"`
+	ApiKey         string `json: "coinbasekey"`
 }
 
 type transactionResult struct {
@@ -35,6 +38,11 @@ type callbackResult struct {
 	} `json:"order"`
 }
 
+// Create the configuration
+var config = configuration{}
+
+// Do stuff
+
 // Get an appropriate name for the file.
 func newFileName(fname string) string {
 	result := strings.Replace(strings.Replace(fname, "/", "-", -1), " ", "-", -1)
@@ -42,20 +50,20 @@ func newFileName(fname string) string {
 		if _, err := os.Stat("tmp/" + result); os.IsNotExist(err) {
 			// Don't do anything.
 		} else {
-			result = getname("p" + result)
+			result = newFileName("p" + result)
 		}
 	} else {
-		result = getname("p" + result)
+		result = newFileName("p" + result)
 	}
 	return result
 }
 
 // Create a coinbase button.
-func createButton(n string, p float64) string {
+func createButton(n string, p int) string {
 	coinbaserequest := "{ \"button\": {" +
 		"\"name\": \"One-Time Hosting Purchase\"," +
 		"\"type\": \"buy_now\"," +
-		"\"price_string\": \"" + strconv.FormatFloat(p, 'f', 8, 64) + "\"," +
+		"\"price_string\": \"" + strconv.FormatFloat(float64(p)/float64(100000000), 'f', 8, 64) + "\"," +
 		"\"price_currency_iso\": \"BTC\"," +
 		"\"custom\": \"" + n + "\"," +
 		"\"callback_url\": \"whatever\"," +
@@ -63,12 +71,11 @@ func createButton(n string, p float64) string {
 		"\"type\": \"buy_now\"," +
 		"\"style\": \"custom_large\"" +
 		"} }"
-	apikey := "InsertKeyHere"
 	fmt.Println(coinbaserequest)
 	request_body := bytes.NewBuffer([]byte(coinbaserequest))
 
 	client := &http.Client{}
-	req, err := http.NewRequest("POST", "https://coinbase.com/api/v1/buttons?api_key="+apikey, request_body)
+	req, err := http.NewRequest("POST", "https://coinbase.com/api/v1/buttons?api_key="+config.ApiKey, request_body)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -102,32 +109,29 @@ func upload(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// Get the name for the file.
-	filename := header.Filename
-	filename = newFileName(filename)
-	fmt.Println(filename)
+	fileName := newFileName(header.Filename)
+	log.Print("Uploaded new file: ", fileName)
 
 	data, err := ioutil.ReadAll(file)
 	if err != nil {
 		log.Print(err)
 		return
 	}
-	err = ioutil.WriteFile("tmp/"+filename, data, 0777)
+	err = ioutil.WriteFile("tmp/"+fileName, data, 0777)
 	if err != nil {
 		log.Print(err)
 		return
 	}
 
 	// Get file size.
-	supfil, _ := os.Stat("tmp/" + filename)
-	filesize := float64(supfil.Size())
-	price := math.Floor(math.Floor(filesize/1024)*4.8828125) / 100000000
-	if price < 0.000025 {
-		price = 0.000025
+	supfil, _ := os.Stat("tmp/" + fileName)
+	fileSize := math.Floor(float64(supfil.Size()) / 1024)
+	price := int(math.Floor(float64(config.BasePrice) * (fileSize/1024)))
+	if price < config.MinimumPrice {
+		price = config.MinimumPrice
 	}
-	fmt.Println(strconv.FormatFloat(price, 'f', 8, 64))
-
 	// Redirect the user.
-	http.Redirect(w, req, "https://coinbase.com/checkouts/"+createButton(filename, price), 302)
+	http.Redirect(w, req, "https://coinbase.com/checkouts/"+createButton(fileName, price), 302)
 
 }
 
@@ -147,6 +151,18 @@ func MainPage(w http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
+	// Inititalize the config.
+	configFile, err := os.Open("config.json")
+	if err != nil {
+		log.Fatal("Failed to open config: ", err)
+	}
+	decoder := json.NewDecoder(configFile)
+
+	err = decoder.Decode(&config)
+	if err != nil {
+		log.Fatal("Failed to open config: ", err)
+	}
+
 	// Main page
 	http.HandleFunc("/", MainPage)
 	// Upload page
@@ -157,7 +173,7 @@ func main() {
 	http.Handle("/f/", http.FileServer(http.Dir("")))
 
 	// Try and serve port 80.
-	err := http.ListenAndServe(":80", nil)
+	err = http.ListenAndServe(":80", nil)
 	if err != nil {
 		// Failed for some reason, try port 8080
 		log.Print("Failed to bind to port 80, trying 8080.")
