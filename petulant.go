@@ -1,4 +1,5 @@
 package main
+
 // Package main runs the petulant-lana server.
 
 import (
@@ -9,9 +10,9 @@ import (
 	"io/ioutil"
 	"log"
 	"math"
+	"math/rand"
 	"net/http"
 	"os"
-	"rand"
 	"strconv"
 	"strings"
 )
@@ -138,7 +139,7 @@ func upload(w http.ResponseWriter, req *http.Request) {
 	// Get file size.
 	supfil, _ := os.Stat("tmp/" + fileName)
 	fileSize := math.Floor(float64(supfil.Size()) / 1024)
-	price := int(math.Floor(float64(config.BasePrice) * (fileSize/1024)))
+	price := int(math.Floor(float64(config.BasePrice) * (fileSize / 1024)))
 	if price < config.MinimumPrice {
 		price = config.MinimumPrice
 	}
