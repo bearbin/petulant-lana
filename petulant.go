@@ -11,6 +11,7 @@ import (
 	"math"
 	"net/http"
 	"os"
+	"rand"
 	"strconv"
 	"strings"
 )
@@ -46,17 +47,27 @@ var config = configuration{}
 
 // Get an appropriate name for the file.
 func newFileName(fname string) string {
-	result := strings.Replace(strings.Replace(fname, "/", "-", -1), " ", "-", -1)
-	if _, err := os.Stat("f/" + result); os.IsNotExist(err) {
-		if _, err := os.Stat("tmp/" + result); os.IsNotExist(err) {
+	// First, remove slashes and spaces, replace with dashes.
+	newName := strings.Replace(strings.Replace(fname, "/", "-", -1), " ", "-", -1)
+
+	// Does the current file already exist, in storage.
+	if _, err := os.Stat("f/" + newName); os.IsNotExist(err) {
+		// Does the current file already exist, in temporary storage.
+		if _, err := os.Stat("tmp/" + newName); os.IsNotExist(err) {
 			// Don't do anything.
 		} else {
-			result = newFileName("p" + result)
+			// Add a random number onto the front of the filename.
+			// This is not the best method, but it does for now.
+			randomLetter := fmt.Sprint(rand.Int())
+			newName = newFileName(randomLetter + newName)
 		}
 	} else {
-		result = newFileName("p" + result)
+		// Add a random number onto the front of the filename.
+		// This is not the best method, but it does for now.
+		randomLetter := fmt.Sprint(rand.Int())
+		newName = newFileName(randomLetter + newName)
 	}
-	return result
+	return newName
 }
 
 // Create a coinbase button.
