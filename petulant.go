@@ -29,16 +29,16 @@ type configuration struct {
 }
 
 type transactionResult struct {
-	Success bool `json:"success"`
+	Success bool `json: "success"`
 	Button  struct {
-		Code string `json:"code"`
-	} `json:"button"`
+		Code string `json: "code"`
+	} `json: "button"`
 }
 
 type callbackResult struct {
 	Order struct {
-		Filename string `json:"custom"`
-	} `json:"order"`
+		Filename string `json: "custom"`
+	} `json: "order"`
 }
 
 // Create the configuration
@@ -73,19 +73,18 @@ func newFileName(fname string) string {
 
 // Create a coinbase button.
 func createButton(n string, p int) string {
-	coinbaserequest := "{ \"button\": {" +
+	coinbaseRequest := "{ \"button\": {" +
 		"\"name\": \"One-Time Hosting Purchase\"," +
 		"\"type\": \"buy_now\"," +
 		"\"price_string\": \"" + strconv.FormatFloat(float64(p)/float64(100000000), 'f', 8, 64) + "\"," +
 		"\"price_currency_iso\": \"BTC\"," +
 		"\"custom\": \"" + n + "\"," +
-		"\"callback_url\": \"whatever\"," +
+		"\"callback_url\": \"" + config.Url + "/" + config.CallbackSecret + "\"," +
 		"\"description\": \"Indefinite storage of the provided file. Your file will be available at: http://btcdl.bearbin.net/f/" + n + " when the transaction processes.\"," +
 		"\"type\": \"buy_now\"," +
 		"\"style\": \"custom_large\"" +
 		"} }"
-	fmt.Println(coinbaserequest)
-	request_body := bytes.NewBuffer([]byte(coinbaserequest))
+	request_body := bytes.NewBuffer([]byte(coinbaseRequest))
 
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", "https://coinbase.com/api/v1/buttons?api_key="+config.ApiKey, request_body)
@@ -160,7 +159,7 @@ func coinbaseCallback(w http.ResponseWriter, req *http.Request) {
 
 func MainPage(w http.ResponseWriter, req *http.Request) {
 	t, _ := template.ParseFiles("index.html")
-	t.Execute(w, "")
+	t.Execute(w, config)
 }
 
 func main() {
@@ -181,7 +180,7 @@ func main() {
 	// Upload page
 	http.HandleFunc("/upload", upload)
 	// Coinbase callback
-	http.HandleFunc("/" + config.CallbackSecret, coinbaseCallback)
+	http.HandleFunc("/"+config.CallbackSecret, coinbaseCallback)
 	// Static files
 	http.Handle("/f/", http.FileServer(http.Dir("")))
 
