@@ -1,7 +1,8 @@
 {
 	"name": "Pay-Once File Host"
 	,"url": "http://example.com"
-	,"callbacksecret": "supersecretword"
+	,"callbacksecret": "super secret phrase"
 	,"baseprice": 50
 	,"minprice": 25
+	,"coinbasekey": "your key here"
 }
