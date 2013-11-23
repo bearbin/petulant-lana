@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
 	"io/ioutil"
 	"log"
 	"math"
@@ -15,17 +16,18 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Define the types
 
 type configuration struct {
-	Name           string `json: "name"`
-	Url            string `json: "url"`
-	CallbackSecret string `json: "callbacksecret"`
-	BasePrice      int    `json: "baseprice"`
-	MinimumPrice   int    `json: "minprice"`
-	ApiKey         string `json: "coinbasekey"`
+	Name           string `json:"name"`
+	Url            string `json:"url"`
+	CallbackSecret string `json:"callbacksecret"`
+	BasePrice      int    `json:"baseprice"`
+	MinimumPrice   int    `json:"minprice"`
+	ApiKey         string `json:"coinbasekey"`
 }
 
 type transactionResult struct {
@@ -44,7 +46,27 @@ type callbackResult struct {
 // Create the configuration
 var config = configuration{}
 
-// Do stuff
+func init() {
+	rand.Seed(time.Now().UTC().UnixNano())
+	configFile, err := os.Open("config.json")
+	if err != nil {
+		log.Fatal("failed to open config: ", err)
+	}
+	configData, err := ioutil.ReadAll(configFile)
+	if err != nil {
+		log.Println(err)
+	}
+	err = json.Unmarshal(configData, &config)
+	if err != nil {
+		log.Fatal("failed to decode config: ", err)
+	}
+	log.Println(config.Name)
+	log.Println(config.Url)
+	log.Println(config.CallbackSecret)
+	log.Println(config.ApiKey)
+	log.Println(config.BasePrice)
+	log.Println(config.MinimumPrice)
+}
 
 // Get an appropriate name for the file.
 func newFileName(fname string) string {
@@ -59,13 +81,13 @@ func newFileName(fname string) string {
 		} else {
 			// Add a random number onto the front of the filename.
 			// This is not the best method, but it does for now.
-			randomLetter := fmt.Sprint(rand.Int())
+			randomLetter := fmt.Sprint(rand.Intn(10))
 			newName = newFileName(randomLetter + newName)
 		}
 	} else {
 		// Add a random number onto the front of the filename.
 		// This is not the best method, but it does for now.
-		randomLetter := fmt.Sprint(rand.Int())
+		randomLetter := fmt.Sprint(rand.Intn(10))
 		newName = newFileName(randomLetter + newName)
 	}
 	return newName
@@ -73,39 +95,50 @@ func newFileName(fname string) string {
 
 // Create a coinbase button.
 func createButton(n string, p int) string {
-	coinbaseRequest := "{ \"button\": {" +
-		"\"name\": \"One-Time Hosting Purchase\"," +
-		"\"type\": \"buy_now\"," +
-		"\"price_string\": \"" + strconv.FormatFloat(float64(p)/float64(100000000), 'f', 8, 64) + "\"," +
-		"\"price_currency_iso\": \"BTC\"," +
-		"\"custom\": \"" + n + "\"," +
-		"\"callback_url\": \"" + config.Url + "/" + config.CallbackSecret + "\"," +
-		"\"description\": \"Indefinite storage of the provided file. Your file will be available at: http://btcdl.bearbin.net/f/" + n + " when the transaction processes.\"," +
-		"\"type\": \"buy_now\"," +
-		"\"style\": \"custom_large\"" +
-		"} }"
+	price := strconv.FormatFloat(float64(p)/float64(100000000), 'f', 8, 64)
+	callback := fmt.Sprintf("%s/%s", config.Url, config.CallbackSecret)
+	description := fmt.Sprintf("Indefinite storage of the provided file. Your file will be available at: %s/%s when the transaction processes.", config.Url, n)
+	coinbaseRequest := fmt.Sprintf(`
+		{ 
+			"button": {
+				"name": "One-Time Hosting Purchase",
+				"type": "buy_now",
+				"price_string": "%s",
+				"price_currency_iso": "BTC",
+				"custom": "%s",
+				"callback_url": "%s",
+				"description": "%s",
+				"type": "buy_now",
+				"style": "custom_large"
+			} 
+		}
+		`, price, n, callback, description)
+	log.Println(coinbaseRequest)
 	request_body := bytes.NewBuffer([]byte(coinbaseRequest))
 
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", "https://coinbase.com/api/v1/buttons?api_key="+config.ApiKey, request_body)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 
 	req.Header.Add("content-type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 
 	response_body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
+	log.Println(string(response_body))
 	defer resp.Body.Close()
 	res := transactionResult{}
-	fmt.Println(string(response_body))
 	err = json.Unmarshal(response_body, &res)
+	if err != nil {
+		log.Println("decoding coinbase response: ",err)
+	}
 	return res.Button.Code
 
 }
@@ -116,13 +149,13 @@ func upload(w http.ResponseWriter, req *http.Request) {
 	// Get the form file.
 	file, header, err := req.FormFile("file")
 	if err != nil {
-		fmt.Println(err)
+		log.Println("form file: ", err)
 		return
 	}
 
 	// Get the name for the file.
 	fileName := newFileName(header.Filename)
-	log.Print("Uploaded new file: ", fileName)
+	log.Print("uploaded new file: ", fileName)
 
 	data, err := ioutil.ReadAll(file)
 	if err != nil {
@@ -136,19 +169,34 @@ func upload(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// Get file size.
-	supfil, _ := os.Stat("tmp/" + fileName)
-	fileSize := math.Floor(float64(supfil.Size()) / 1024)
+	fileInfo, _ := os.Stat("tmp/" + fileName)
+	fileSize := math.Floor(float64(fileInfo.Size()) / 1024)
 	price := int(math.Floor(float64(config.BasePrice) * (fileSize / 1024)))
 	if price < config.MinimumPrice {
 		price = config.MinimumPrice
 	}
-	// Redirect the user.
-	http.Redirect(w, req, "https://coinbase.com/checkouts/"+createButton(fileName, price), 302)
 
+	// Put info on the page.
+	buttonCode := createButton(fileName, price)
+	fileCode := fmt.Sprintf("%s/f/%s", config.Url, fileName)
+	pageSource := fmt.Sprintf(
+		`
+		<html>
+		<head>
+			<title>Upload Finished</title>
+		</head>
+		<body>
+			<p>Your upload has finished, now all you need to do is pay!</p>
+			<a class="coinbase-button" data-code="%s" data-button-style="custom_large" data-button-text="Checkout with Bitcoin" href="#">Checkout With Bitcoin</a>
+			<script src="https://coinbase.com/assets/button.js" type="text/javascript"></script>
+			<p>Your file will be available at <a href="%s">%s</a>. Don't forget this as it's very hard to find out which file you uploaded.</p>
+		</body>
+		</html>
+		`, buttonCode, fileCode, fileCode)
+	io.WriteString(w, pageSource)
 }
 
 func coinbaseCallback(w http.ResponseWriter, req *http.Request) {
-	fmt.Println("LELELELE")
 	body, _ := ioutil.ReadAll(req.Body)
 	res := callbackResult{}
 	fmt.Println(body)
@@ -166,16 +214,6 @@ func MainPage(w http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
-	configFile, err := os.Open("config.json")
-	if err != nil {
-		log.Fatal("Failed to open config: ", err)
-	}
-	decoder := json.NewDecoder(configFile)
-	err = decoder.Decode(&config)
-	if err != nil {
-		log.Fatal("Failed to open config: ", err)
-	}
-
 	// Main page
 	http.HandleFunc("/", MainPage)
 	// Upload page
@@ -185,12 +223,11 @@ func main() {
 	// Static files
 	http.Handle("/f/", http.FileServer(http.Dir("")))
 
-	err = http.ListenAndServe(":80", nil)
+	err := http.ListenAndServe(":80", nil)
 	if err != nil {
 		log.Print("Failed to bind to port 80, trying 8080.")
 		err := http.ListenAndServe(":8080", nil)
 		if err != nil {
-			// Failed.
 			log.Fatal("ListenAndServe: ", err)
 		}
 	}

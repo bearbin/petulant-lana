@@ -2,7 +2,7 @@
 	"name": "Pay-Once File Host"
 	,"url": "http://example.com"
 	,"callbacksecret": "super secret phrase"
-	,"baseprice": 50
-	,"minprice": 25
+	,"baseprice": 5000
+	,"minprice": 2500
 	,"coinbasekey": "your key here"
 }
