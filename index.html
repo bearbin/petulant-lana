@@ -4,27 +4,21 @@
 
 	<meta charset="UTF-8">
 
-	<title>{{Name}}</title>
+	<title>{{.Name}}</title>
 
 </head>
 
 <body>
 
-	<h1>{{Name}}</h1>
+	<h1>{{.Name}}</h1>
 
 	<h2>What is this service?</h2>
 
-	<p>You upload your file (max 5GiB for now, will expand later), pay some bitcoins and it will stay hosted here forever, no matter how much bandwidth it gets or how long it's kept for. We use Bitcoin because it's an awesome web currency, and supports the microtransactions we need.</p>
+	<p>This is a service where you can upload your files, pay bitcoins (we use coinbase for the free microtransactions, but you can use a normal bitcoin address) and they stay around with no more payments for ever.</P>
 
 	<h2>Price:</h2>
 
-	<p>The price is 50 µBTC per megabyte, rounded up to 25 µBTC if the total is lower than that, and adjusted to whatever the actual usage is. (40kb would become 25 µBTC, and 2MB would become ~100 µBTC for example)</p>
-
-	<h2>FAQ/TOS:</h2>
-
-	<ul>
-		<li>Put yours here.</li>
-	</ul>
+	<p>The price is {{.BasePrice}} µBTC per megabyte, rounded up to {{.MinumumPrice}} µBTC if the total is lower than that, and adjusted to whatever the actual usage is.</p>
 
 	<h2>Upload your file:</h2>
 
