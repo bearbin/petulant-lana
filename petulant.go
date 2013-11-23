@@ -159,17 +159,18 @@ func coinbaseCallback(w http.ResponseWriter, req *http.Request) {
 
 func MainPage(w http.ResponseWriter, req *http.Request) {
 	t, _ := template.ParseFiles("index.html")
-	t.Execute(w, config)
+	err := t.Execute(w, config)
+	if err != nil {
+		log.Println("Error loading main page: ", err)
+	}
 }
 
 func main() {
-	// Inititalize the config.
 	configFile, err := os.Open("config.json")
 	if err != nil {
 		log.Fatal("Failed to open config: ", err)
 	}
 	decoder := json.NewDecoder(configFile)
-
 	err = decoder.Decode(&config)
 	if err != nil {
 		log.Fatal("Failed to open config: ", err)
@@ -184,10 +185,8 @@ func main() {
 	// Static files
 	http.Handle("/f/", http.FileServer(http.Dir("")))
 
-	// Try and serve port 80.
 	err = http.ListenAndServe(":80", nil)
 	if err != nil {
-		// Failed for some reason, try port 8080
 		log.Print("Failed to bind to port 80, trying 8080.")
 		err := http.ListenAndServe(":8080", nil)
 		if err != nil {
