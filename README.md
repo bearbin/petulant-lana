@@ -15,7 +15,7 @@ Setup
  1. In `config.json`, edit the settings:
    * Set `name` to the name you want for your host.
    * Set `url` to the url for your host.
-   * Set `callbacksecret` to a secret callback endpoint. (`hagh243akghjkahg67q5894eyhauhgakjh4234fakj` is a good example. `url/callbacksecret` is the url for the callback to put into coinbase.)
+   * Set `callbacksecret` to a secret callback endpoint. (`hagh243akghjkahg67q5894eyhauhgakjh4234fakj` is a good example. `url/callbacksecret` is the url for the callback used by coinbase.)
    * Set `baseprice` to the base price per megabyte (in satoshis).
    * Set `minprice` to the minimum price per file (in satoshis).
    * Set `coinbasekey` to your Coinbase API key (for billing customers).
