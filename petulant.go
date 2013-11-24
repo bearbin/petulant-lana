@@ -44,7 +44,7 @@ type callbackResult struct {
 	} `json:"order"`
 }
 
-type ButtonType struct {
+type buttonType struct {
 	Name        string `json:"name"`
 	Price       string `json:"price_string"`
 	Currency    string `json:"price_currency_iso"`
@@ -56,7 +56,7 @@ type ButtonType struct {
 }
 
 type coinbaseRequest struct {
-	Button ButtonType `json:"button"`
+	Button buttonType `json:"button"`
 }
 
 // Create the configuration
@@ -206,7 +206,7 @@ func coinbaseCallback(w http.ResponseWriter, req *http.Request) {
 	os.Rename("tmp/"+res.Order.Filename, "f/"+res.Order.Filename)
 }
 
-func MainPage(w http.ResponseWriter, req *http.Request) {
+func mainPage(w http.ResponseWriter, req *http.Request) {
 	t, _ := template.ParseFiles("index.html")
 	err := t.Execute(w, config)
 	if err != nil {
@@ -219,7 +219,7 @@ func main() {
 	iface := flag.String("iface", "0.0.0.0", "Interface to bind to.")
 	flag.Parse()
 	// Main page
-	http.HandleFunc("/", MainPage)
+	http.HandleFunc("/", mainPage)
 	// Upload page
 	http.HandleFunc("/upload", upload)
 	// Coinbase callback
