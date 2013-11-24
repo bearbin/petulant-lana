@@ -63,17 +63,19 @@ type coinbaseRequest struct {
 var config = configuration{}
 
 func init() {
+	// Seed the RNG. Only needs doing once at startup.
 	rand.Seed(time.Now().UTC().UnixNano())
+
+	// Open config file.
 	configFile, err := os.Open("config.json")
 	if err != nil {
 		log.Fatal("failed to open config: ", err)
 	}
 	defer configFile.Close()
-	configData, err := ioutil.ReadAll(configFile)
-	if err != nil {
-		log.Println("reading config file: ", err)
-	}
-	err = json.Unmarshal(configData, &config)
+
+	// Decode config.
+	decoder := json.NewDecoder(configFile)
+	err = decoder.Decode(&config)
 	if err != nil {
 		log.Fatal("failed to decode config: ", err)
 	}
