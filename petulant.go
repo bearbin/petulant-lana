@@ -200,11 +200,9 @@ func upload(w http.ResponseWriter, req *http.Request) {
 }
 
 func coinbaseCallback(w http.ResponseWriter, req *http.Request) {
-	body, _ := ioutil.ReadAll(req.Body)
 	res := callbackResult{}
-	fmt.Println(body)
-	json.Unmarshal([]byte(body), &res)
-	fmt.Println(res.Order.Filename)
+	decoder := json.NewDecoder(req.Body)
+	decoder.Decode(&res)
 	os.Rename("tmp/"+res.Order.Filename, "f/"+res.Order.Filename)
 }
 
