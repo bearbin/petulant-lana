@@ -31,16 +31,16 @@ type configuration struct {
 }
 
 type transactionResult struct {
-	Success bool `json: "success"`
+	Success bool `json:"success"`
 	Button  struct {
-		Code string `json: "code"`
-	} `json: "button"`
+		Code string `json:"code"`
+	} `json:"button"`
 }
 
 type callbackResult struct {
 	Order struct {
-		Filename string `json: "custom"`
-	} `json: "order"`
+		Filename string `json:"custom"`
+	} `json:"order"`
 }
 
 // Create the configuration
