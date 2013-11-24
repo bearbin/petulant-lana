@@ -19,7 +19,9 @@ Setup
    * Set `baseprice` to the base price per megabyte (in satoshis).
    * Set `minprice` to the minimum price per file (in satoshis).
    * Set `coinbasekey` to your Coinbase API key (for billing customers).
- 2. Start Petulant-Lana. Run in su mode if you want port 80, otherwise 8080 will be selected.
+ 2. Start Petulant-Lana.
+
+You can use the option `--port`` to choose the port to run on. 8080 is default.
 
 Why the name?
 -------------

@@ -5,6 +5,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"html/template"
 	"io"
@@ -43,6 +44,21 @@ type callbackResult struct {
 	} `json:"order"`
 }
 
+type ButtonType struct {
+	Name        string `json:"name"`
+	Price       string `json:"price_string"`
+	Currency    string `json:"price_currency_iso"`
+	Filename    string `json:"custom"`
+	CallbackUrl string `json:"callback_url"`
+	Description string `json:"description"`
+	Type        string `json:"type"`
+	Style       string `json:"style"`
+}
+
+type coinbaseRequest struct {
+	Button ButtonType `json:"button"`
+}
+
 // Create the configuration
 var config = configuration{}
 
@@ -52,6 +68,7 @@ func init() {
 	if err != nil {
 		log.Fatal("failed to open config: ", err)
 	}
+	defer configFile.Close()
 	configData, err := ioutil.ReadAll(configFile)
 	if err != nil {
 		log.Println("reading config file: ", err)
@@ -89,25 +106,23 @@ func newFileName(fname string) string {
 
 // Create a coinbase button.
 func createButton(n string, p int) string {
-	price := strconv.FormatFloat(float64(p)/float64(100000000), 'f', 8, 64)
-	callback := fmt.Sprintf("%s/%s", config.Url, config.CallbackSecret)
-	description := fmt.Sprintf("Indefinite storage of the provided file. Your file will be available at: %s/%s when the transaction processes.", config.Url, n)
-	coinbaseRequest := fmt.Sprintf(`
-		{ 
-			"button": {
-				"name": "One-Time Hosting Purchase",
-				"type": "buy_now",
-				"price_string": "%s",
-				"price_currency_iso": "BTC",
-				"custom": "%s",
-				"callback_url": "%s",
-				"description": "%s",
-				"type": "buy_now",
-				"style": "custom_large"
-			} 
-		}
-		`, price, n, callback, description)
-	request_body := bytes.NewBuffer([]byte(coinbaseRequest))
+	buttonCode := ButtonType {
+		Name:        "One-Time Hosting Purchase",
+		Price:       strconv.FormatFloat(float64(p)/float64(100000000), 'f', 8, 64),
+		Currency:    "BTC",
+		Filename:    n,
+		CallbackUrl: fmt.Sprintf("%s/%s", config.Url, config.CallbackSecret),
+		Description: fmt.Sprintf("Indefinite storage of the provided file. Your file will be available at: %s/%s when the transaction processes.", config.Url, n),
+		Type:        "buy_now",
+		Style:       "custom_large",
+	}
+	coinbaseRequest := coinbaseRequest{Button: buttonCode}
+
+	data, err := json.Marshal(coinbaseRequest)
+	if err != nil {
+		log.Println("creating button: ", err)
+	}
+	request_body := bytes.NewBuffer(data)
 
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", "https://coinbase.com/api/v1/buttons?api_key="+config.ApiKey, request_body)
@@ -125,6 +140,7 @@ func createButton(n string, p int) string {
 	if err != nil {
 		log.Println("reading coinbase requst: ", err)
 	}
+	log.Println(response_body)
 	defer resp.Body.Close()
 	res := transactionResult{}
 	err = json.Unmarshal(response_body, &res)
@@ -206,6 +222,9 @@ func MainPage(w http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
+	bindAddr := flag.String("port", "8080", "Server port.")
+	iface := flag.String("iface", "0.0.0.0", "Interface to bind to.")
+	flag.Parse()
 	// Main page
 	http.HandleFunc("/", MainPage)
 	// Upload page
@@ -215,12 +234,6 @@ func main() {
 	// Static files
 	http.Handle("/f/", http.FileServer(http.Dir("")))
 
-	err := http.ListenAndServe(":80", nil)
-	if err != nil {
-		log.Print("Failed to bind to port 80, trying 8080.")
-		err := http.ListenAndServe(":8080", nil)
-		if err != nil {
-			log.Fatal("ListenAndServe: ", err)
-		}
-	}
+	log.Println("Binding to port", *bindAddr)
+	log.Fatal(http.ListenAndServe(*iface + ":" + *bindAddr, nil))
 }
