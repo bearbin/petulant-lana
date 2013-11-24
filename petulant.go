@@ -137,15 +137,11 @@ func createButton(n string, p int) string {
 	if err != nil {
 		log.Println("completing coinbase request: ", err)
 	}
-
-	response_body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Println("reading coinbase requst: ", err)
-	}
 	defer resp.Body.Close()
 
 	res := transactionResult{}
-	err = json.Unmarshal(response_body, &res)
+	resDecoder := json.NewDecoder(resp.Body)
+	err = resDecoder.Decode(&res)
 	if err != nil {
 		log.Println("decoding coinbase response: ", err)
 	}
