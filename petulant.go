@@ -108,7 +108,7 @@ func newFileName(fname string) string {
 
 // Create a coinbase button.
 func createButton(n string, p int) string {
-	buttonCode := ButtonType {
+	buttonCode := ButtonType{
 		Name:        "One-Time Hosting Purchase",
 		Price:       strconv.FormatFloat(float64(p)/float64(100000000), 'f', 8, 64),
 		Currency:    "BTC",
@@ -143,7 +143,7 @@ func createButton(n string, p int) string {
 		log.Println("reading coinbase requst: ", err)
 	}
 	defer resp.Body.Close()
-	
+
 	res := transactionResult{}
 	err = json.Unmarshal(response_body, &res)
 	if err != nil {
@@ -167,14 +167,13 @@ func upload(w http.ResponseWriter, req *http.Request) {
 	fileName := newFileName(header.Filename)
 	log.Print("uploaded new file: ", fileName)
 
-	dataFile, err := os.Create("tmp/"+fileName)
+	dataFile, err := os.Create("tmp/" + fileName)
 	if err != nil {
 		log.Println("opening file for writing: ", err)
 	}
 	defer dataFile.Close()
 
 	io.Copy(dataFile, file)
-
 
 	// Get file size.
 	fileInfo, _ := os.Stat("tmp/" + fileName)
@@ -235,5 +234,5 @@ func main() {
 	http.Handle("/f/", http.FileServer(http.Dir("")))
 
 	log.Println("Binding to port", *bindAddr)
-	log.Fatal(http.ListenAndServe(*iface + ":" + *bindAddr, nil))
+	log.Fatal(http.ListenAndServe(*iface+":"+*bindAddr, nil))
 }
