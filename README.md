@@ -21,7 +21,7 @@ Setup
    * Set `coinbasekey` to your Coinbase API key (for billing customers).
  2. Start Petulant-Lana.
 
-You can use the option `--port`` to choose the port to run on. 8080 is default.
+You can use the option `--port` to choose the port to run on. 8080 is default.
 
 Why the name?
 -------------
