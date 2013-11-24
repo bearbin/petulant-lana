@@ -54,18 +54,12 @@ func init() {
 	}
 	configData, err := ioutil.ReadAll(configFile)
 	if err != nil {
-		log.Println(err)
+		log.Println("reading config file: ", err)
 	}
 	err = json.Unmarshal(configData, &config)
 	if err != nil {
 		log.Fatal("failed to decode config: ", err)
 	}
-	log.Println(config.Name)
-	log.Println(config.Url)
-	log.Println(config.CallbackSecret)
-	log.Println(config.ApiKey)
-	log.Println(config.BasePrice)
-	log.Println(config.MinimumPrice)
 }
 
 // Get an appropriate name for the file.
@@ -113,31 +107,29 @@ func createButton(n string, p int) string {
 			} 
 		}
 		`, price, n, callback, description)
-	log.Println(coinbaseRequest)
 	request_body := bytes.NewBuffer([]byte(coinbaseRequest))
 
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", "https://coinbase.com/api/v1/buttons?api_key="+config.ApiKey, request_body)
 	if err != nil {
-		log.Println(err)
+		log.Println("creating coinbase request: ", err)
 	}
 
 	req.Header.Add("content-type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Println(err)
+		log.Println("completing coinbase request: ", err)
 	}
 
 	response_body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Println(err)
+		log.Println("reading coinbase requst: ", err)
 	}
-	log.Println(string(response_body))
 	defer resp.Body.Close()
 	res := transactionResult{}
 	err = json.Unmarshal(response_body, &res)
 	if err != nil {
-		log.Println("decoding coinbase response: ",err)
+		log.Println("decoding coinbase response: ", err)
 	}
 	return res.Button.Code
 
