@@ -140,8 +140,8 @@ func createButton(n string, p int) string {
 	if err != nil {
 		log.Println("reading coinbase requst: ", err)
 	}
-	log.Println(response_body)
 	defer resp.Body.Close()
+	
 	res := transactionResult{}
 	err = json.Unmarshal(response_body, &res)
 	if err != nil {
@@ -165,16 +165,14 @@ func upload(w http.ResponseWriter, req *http.Request) {
 	fileName := newFileName(header.Filename)
 	log.Print("uploaded new file: ", fileName)
 
-	data, err := ioutil.ReadAll(file)
+	dataFile, err := os.Create("tmp/"+fileName)
 	if err != nil {
-		log.Print(err)
-		return
+		log.Println("opening file for writing: ", err)
 	}
-	err = ioutil.WriteFile("tmp/"+fileName, data, 0777)
-	if err != nil {
-		log.Print(err)
-		return
-	}
+	defer dataFile.Close()
+
+	io.Copy(dataFile, file)
+
 
 	// Get file size.
 	fileInfo, _ := os.Stat("tmp/" + fileName)
