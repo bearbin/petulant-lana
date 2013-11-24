@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"io/ioutil"
 	"log"
 	"math"
 	"math/rand"
@@ -57,6 +56,11 @@ type buttonType struct {
 
 type coinbaseRequest struct {
 	Button buttonType `json:"button"`
+}
+
+type uploadStruct struct {
+	Code string
+	Url string
 }
 
 // Create the configuration
@@ -108,7 +112,7 @@ func newFileName(fname string) string {
 
 // Create a coinbase button.
 func createButton(n string, p int) string {
-	buttonCode := ButtonType{
+	buttonCode := buttonType{
 		Name:        "One-Time Hosting Purchase",
 		Price:       strconv.FormatFloat(float64(p)/float64(100000000), 'f', 8, 64),
 		Currency:    "BTC",
@@ -179,24 +183,17 @@ func upload(w http.ResponseWriter, req *http.Request) {
 		price = config.MinimumPrice
 	}
 
-	// Put info on the page.
-	buttonCode := createButton(fileName, price)
-	fileCode := fmt.Sprintf("%s/f/%s", config.Url, fileName)
-	pageSource := fmt.Sprintf(
-		`
-		<html>
-		<head>
-			<title>Upload Finished</title>
-		</head>
-		<body>
-			<p>Your upload has finished, now all you need to do is pay!</p>
-			<a class="coinbase-button" data-code="%s" data-button-style="custom_large" data-button-text="Checkout with Bitcoin" href="#">Checkout With Bitcoin</a>
-			<script src="https://coinbase.com/assets/button.js" type="text/javascript"></script>
-			<p>Your file will be available at <a href="%s">%s</a>. Don't forget this as it's very hard to find out which file you uploaded.</p>
-		</body>
-		</html>
-		`, buttonCode, fileCode, fileCode)
-	io.WriteString(w, pageSource)
+	// Create template.
+	uploadInfo := uploadStruct{
+		Code: createButton(fileName, price),
+		Url: fmt.Sprintf("%s/f/%s", config.Url, fileName),
+	}
+	t, _ := template.ParseFiles("upload.html")
+	err = t.Execute(w, uploadInfo)
+	if err != nil {
+		log.Println("loading upload page: ", err)
+	}
+
 }
 
 func coinbaseCallback(w http.ResponseWriter, req *http.Request) {

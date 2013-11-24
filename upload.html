@@ -1,0 +1,15 @@
+<!doctype html>
+
+<html>
+
+<head>
+	<title>Upload Finished</title>
+</head>
+<body>
+	<p>Your upload has finished, now all you need to do is pay!</p>
+	<a class="coinbase-button" data-code="{{.Code}}" data-button-style="custom_large" data-button-text="Checkout with Bitcoin" href="https://coinbase.com/checkouts/{{.Code}}">Checkout With Bitcoin</a>
+	<script src="https://coinbase.com/assets/button.js" type="text/javascript"></script>
+	<p>Your file will be available at <a href="{{.Url}}">{{.Url}}</a>. Don't forget this as it's very hard to find out which file you uploaded.</p>
+</body>
+
+</html>
